@@ -11,6 +11,10 @@
 #define VECWIDTHAVXDP 4
 
 
+// Comment out to remove all AVX functions and instructions, for compiling on non-supporting CPUs
+#define WITHAVX 1
+
+
 #define RESTRICT restrict
 #define CONST const
 

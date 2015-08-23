@@ -48,6 +48,8 @@ int main(void)
 	RunLatencyTestsParallel();
 	RunThroughputTestsParallel();
 
+	free(freqs);
+
 	return 0;
 }
 
@@ -76,17 +78,22 @@ void RunLatencyTestsParallel()
 			// Allocate and initialize memory for this thread
 			// (32byte aligned) allocation of arrays for tests.
 			// Single vector-width arrays for SP,DP, (AVX and SSE)
-			float *arraySSESP, *arrayAVXSP, arraySumSP = 0.0f;
-			double *arraySSEDP, *arrayAVXDP, arraySumDP = 0.0;
+			float *arraySSESP, arraySumSP = 0.0f;
+			double *arraySSEDP, arraySumDP = 0.0;
 			arraySSESP = _mm_malloc(VECWIDTHSSESP * sizeof *arraySSESP, 32);
 			arraySSEDP = _mm_malloc(VECWIDTHSSEDP * sizeof *arraySSEDP, 32);
-			arrayAVXSP = _mm_malloc(VECWIDTHAVXSP * sizeof *arrayAVXSP, 32);
-			arrayAVXDP = _mm_malloc(VECWIDTHAVXDP * sizeof *arrayAVXDP, 32);
 			// initialize
 			for (int j = 0; j < VECWIDTHSSESP; j++) arraySSESP[j] = j;
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySSEDP[j] = j;
+#ifdef WITHAVX
+			float *arrayAVXSP;
+			double *arrayAVXDP;
+			arrayAVXSP = _mm_malloc(VECWIDTHAVXSP * sizeof *arrayAVXSP, 32);
+			arrayAVXDP = _mm_malloc(VECWIDTHAVXDP * sizeof *arrayAVXDP, 32);
 			for (int j = 0; j < VECWIDTHAVXSP; j++) arrayAVXSP[j] = j;
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arrayAVXDP[j] = j;
+#endif
+
 
 			// Set up PAPI counters:
 			int counters[2] = {PAPI_TOT_CYC};
@@ -125,7 +132,8 @@ void RunLatencyTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySumDP += arraySSEDP[j];
-			
+
+#ifdef WITHAVX
 			// vaddps
 			#pragma omp barrier
 			CheckPAPIError(PAPI_read_counters(counterValues, numCounters), __LINE__);
@@ -147,7 +155,7 @@ void RunLatencyTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
-
+#endif
 
 
 			// // // Multiplication tests // // //
@@ -172,7 +180,8 @@ void RunLatencyTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySumDP += arraySSEDP[j];
-			
+
+#ifdef WITHAVX
 			// vmulps
 			#pragma omp barrier
 			CheckPAPIError(PAPI_read_counters(counterValues, numCounters), __LINE__);
@@ -194,7 +203,7 @@ void RunLatencyTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
-
+#endif
 
 
 			// // // Division tests // // //
@@ -219,7 +228,8 @@ void RunLatencyTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySumDP += arraySSEDP[j];
-			
+
+#ifdef WITHAVX
 			// vdivps
 			#pragma omp barrier
 			CheckPAPIError(PAPI_read_counters(counterValues, numCounters), __LINE__);
@@ -241,14 +251,16 @@ void RunLatencyTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
-
+#endif
 
 			CheckPAPIError(PAPI_stop_counters(counterValues, numCounters), __LINE__);
 
 			_mm_free(arraySSESP);
 			_mm_free(arraySSEDP);
+#ifdef WITHAVX
 			_mm_free(arrayAVXSP);
 			_mm_free(arrayAVXDP);
+#endif
 
 		} // end omp parallel region
 
@@ -265,34 +277,46 @@ void RunLatencyTestsParallel()
 		// Print a separate mean and stdev for each participating thread
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "addps", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][ps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][ps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "addpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][pd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][pd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vaddps", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vaddpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "mulps", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][ps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][ps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "mulpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][pd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][pd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vmulps", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vmulpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "divps", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][ps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][ps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "divpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][pd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][pd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vdivps", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vdivpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#endif
 #else
 		// Compute mean and stdev between all participating threads
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "addps", threads, ComputeMean(&(resultsCycles[threads-1][add][ps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][ps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "addpd", threads, ComputeMean(&(resultsCycles[threads-1][add][pd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][pd][0]), threads*NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vaddps", threads, ComputeMean(&(resultsCycles[threads-1][add][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vaddpd", threads, ComputeMean(&(resultsCycles[threads-1][add][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vpd][0]), threads*NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "mulps", threads, ComputeMean(&(resultsCycles[threads-1][mul][ps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][ps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "mulpd", threads, ComputeMean(&(resultsCycles[threads-1][mul][pd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][pd][0]), threads*NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vmulps", threads, ComputeMean(&(resultsCycles[threads-1][mul][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vmulpd", threads, ComputeMean(&(resultsCycles[threads-1][mul][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vpd][0]), threads*NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "divps", threads, ComputeMean(&(resultsCycles[threads-1][div][ps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][ps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "divpd", threads, ComputeMean(&(resultsCycles[threads-1][div][pd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][pd][0]), threads*NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vdivps", threads, ComputeMean(&(resultsCycles[threads-1][div][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vdivpd", threads, ComputeMean(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES);
+#endif
 #endif
 		printf("-----------------------------------------------------------------\n");
 	}
@@ -328,17 +352,21 @@ void RunThroughputTestsParallel()
 			// this is (for now...) the number of vector registers and
 			// so the most independent instructions that will be queued
 			// up in the tests
-			float *arraySSESP, *arrayAVXSP, arraySumSP = 0.0f;
-			double *arraySSEDP, *arrayAVXDP, arraySumDP = 0.0;
+			float *arraySSESP, arraySumSP = 0.0f;
+			double *arraySSEDP, arraySumDP = 0.0;
 			arraySSESP = _mm_malloc(16 * VECWIDTHSSESP * sizeof *arraySSESP, 32);
 			arraySSEDP = _mm_malloc(16 * VECWIDTHSSEDP * sizeof *arraySSEDP, 32);
-			arrayAVXSP = _mm_malloc(16 * VECWIDTHAVXSP * sizeof *arrayAVXSP, 32);
-			arrayAVXDP = _mm_malloc(16 * VECWIDTHAVXDP * sizeof *arrayAVXDP, 32);
 			// initialize
 			for (int j = 0; j < 16 * VECWIDTHSSESP; j++) arraySSESP[j] = j;
 			for (int j = 0; j < 16 * VECWIDTHSSEDP; j++) arraySSEDP[j] = j;
+#ifdef WITHAVX
+			float *arrayAVXSP;
+			double *arrayAVXDP;
+			arrayAVXSP = _mm_malloc(16 * VECWIDTHAVXSP * sizeof *arrayAVXSP, 32);
+			arrayAVXDP = _mm_malloc(16 * VECWIDTHAVXDP * sizeof *arrayAVXDP, 32);
 			for (int j = 0; j < 16 * VECWIDTHAVXSP; j++) arrayAVXSP[j] = j;
 			for (int j = 0; j < 16 * VECWIDTHAVXDP; j++) arrayAVXDP[j] = j;
+#endif
 
 			// Set up PAPI counters:
 			int counters[1] = {PAPI_TOT_CYC};
@@ -380,7 +408,8 @@ void RunThroughputTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySumDP += arraySSEDP[j];
-			
+
+#ifdef WITHAVX
 			// vaddps
 			#pragma omp barrier
 			CheckPAPIError(PAPI_read_counters(counterValues, numCounters), __LINE__);
@@ -402,7 +431,7 @@ void RunThroughputTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
-
+#endif
 
 
 			// // // Multiplication tests // // //
@@ -427,7 +456,8 @@ void RunThroughputTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySumDP += arraySSEDP[j];
-			
+
+#ifdef WITHAVX
 			// vmulps
 			#pragma omp barrier
 			CheckPAPIError(PAPI_read_counters(counterValues, numCounters), __LINE__);
@@ -449,7 +479,7 @@ void RunThroughputTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
-
+#endif
 
 
 			// // // Division tests // // //
@@ -474,7 +504,8 @@ void RunThroughputTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHSSEDP; j++) arraySumDP += arraySSEDP[j];
-			
+
+#ifdef WITHAVX
 			// vdivps
 			#pragma omp barrier
 			CheckPAPIError(PAPI_read_counters(counterValues, numCounters), __LINE__);
@@ -496,14 +527,17 @@ void RunThroughputTestsParallel()
 			}
 			// use result to ensure compiler doesn't optimize out
 			for (int j = 0; j < VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
+#endif
 
 
 			CheckPAPIError(PAPI_stop_counters(counterValues, numCounters), __LINE__);
 
 			_mm_free(arraySSESP);
 			_mm_free(arraySSEDP);
+#ifdef WITHAVX
 			_mm_free(arrayAVXSP);
 			_mm_free(arrayAVXDP);
+#endif
 
 		} // end omp parallel region
 
@@ -520,34 +554,46 @@ void RunThroughputTestsParallel()
 		// Print a separate mean and stdev for each participating thread
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "addps", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][ps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][ps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "addpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][pd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][pd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vaddps", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vaddpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][add][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "mulps", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][ps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][ps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "mulpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][pd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][pd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vmulps", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vmulpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][mul][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "divps", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][ps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][ps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "divpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][pd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][pd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vdivps", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vdivpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
+#endif
 #else
 		// Compute mean and stdev between all participating threads
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "addps", threads, ComputeMean(&(resultsCycles[threads-1][add][ps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][ps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "addpd", threads, ComputeMean(&(resultsCycles[threads-1][add][pd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][pd][0]), threads*NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vaddps", threads, ComputeMean(&(resultsCycles[threads-1][add][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vaddpd", threads, ComputeMean(&(resultsCycles[threads-1][add][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][add][vpd][0]), threads*NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "mulps", threads, ComputeMean(&(resultsCycles[threads-1][mul][ps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][ps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "mulpd", threads, ComputeMean(&(resultsCycles[threads-1][mul][pd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][pd][0]), threads*NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vmulps", threads, ComputeMean(&(resultsCycles[threads-1][mul][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vmulpd", threads, ComputeMean(&(resultsCycles[threads-1][mul][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][mul][vpd][0]), threads*NRUNS)/(double)NTIMES);
+#endif
 		printf("-----------------------------------------------------------------\n");
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "divps", threads, ComputeMean(&(resultsCycles[threads-1][div][ps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][ps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "divpd", threads, ComputeMean(&(resultsCycles[threads-1][div][pd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][pd][0]), threads*NRUNS)/(double)NTIMES);
+#ifdef WITHAVX
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vdivps", threads, ComputeMean(&(resultsCycles[threads-1][div][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vdivpd", threads, ComputeMean(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES);
+#endif
 #endif
 		printf("-----------------------------------------------------------------\n");
 	}
@@ -562,30 +608,59 @@ void RunMaxFlopsTests(double peak)
 	printf("\n\nRunning Peak FLOPS tests (single thread) ...\n");
 	printf("!! These tests do not currently achieve peak FLOPS on CPUs which support FMA !!\n");
 
+
 	// (32byte aligned) allocation of arrays for tests.
-	// 16 vector-width arrays for SP,DP, (AVX and SSE), since
-	// this is (for now...) the number of vector registers and
-	// so the most independent instructions that will be queued
-	// up in the tests
-	float *arraySSESP, *arrayAVXSP, arraySumSP = 0.0f;
-	double *arraySSEDP, *arrayAVXDP, arraySumDP = 0.0;
+	// 16 vector-width arrays for SP,DP
+	float *arraySSESP, arraySumSP = 0.0f;
+	double *arraySSEDP, arraySumDP = 0.0;
 	arraySSESP = _mm_malloc(16 * VECWIDTHSSESP * sizeof *arraySSESP, 32);
 	arraySSEDP = _mm_malloc(16 * VECWIDTHSSEDP * sizeof *arraySSEDP, 32);
-	arrayAVXSP = _mm_malloc(16 * VECWIDTHAVXSP * sizeof *arrayAVXSP, 32);
-	arrayAVXDP = _mm_malloc(16 * VECWIDTHAVXDP * sizeof *arrayAVXDP, 32);
 	// initialize
 	for (int j = 0; j < 16 * VECWIDTHSSESP; j++) arraySSESP[j] = j;
 	for (int j = 0; j < 16 * VECWIDTHSSEDP; j++) arraySSEDP[j] = j;
+#ifdef WITHAVX
+	float *arrayAVXSP;
+	double *arrayAVXDP;
+	arrayAVXSP = _mm_malloc(16 * VECWIDTHAVXSP * sizeof *arrayAVXSP, 32);
+	arrayAVXDP = _mm_malloc(16 * VECWIDTHAVXDP * sizeof *arrayAVXDP, 32);
+	// initialize
 	for (int j = 0; j < 16 * VECWIDTHAVXSP; j++) arrayAVXSP[j] = j;
 	for (int j = 0; j < 16 * VECWIDTHAVXDP; j++) arrayAVXDP[j] = j;
+#endif
 
 	// To hold results:
 	double runTimes[NRUNS];
 
-	// Warm-Up run
-	TestMaxFlopsAVXSP(arrayAVXSP, 1.0000001f);
-
+	// Functions return no. of instructions run per NTIMES tests
 	int instrRun;
+
+
+	// Warm-Up run, SSE
+	TestMaxFlopsSSESP(arraySSESP, 1.0000001f);
+
+	for (int i = 0; i < NRUNS; i++) {
+		double timeStart = GetWallTime();
+		instrRun = TestMaxFlopsSSESP(arraySSESP, 1.0000001f);
+		runTimes[i] = GetWallTime() - timeStart;
+	}
+	for (int j = 0; j < instrRun * VECWIDTHSSESP; j++) arraySumSP += arraySSESP[j];
+	printf("Single Precision Peak GFLOPS (SSE): %.3lf\n", (double)instrRun*VECWIDTHSSESP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9);
+
+	for (int i = 0; i < NRUNS; i++) {
+		double timeStart = GetWallTime();
+		instrRun = TestMaxFlopsSSEDP(arraySSEDP, 1.0000001f);
+		runTimes[i] = GetWallTime() - timeStart;
+	}
+	for (int j = 0; j < instrRun * VECWIDTHSSESP; j++) arraySumDP += arrayAVXDP[j];
+	printf("Double Precision Peak GFLOPS (SSE): %.3lf\n", (double)instrRun*VECWIDTHSSEDP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9);
+
+	free(arraySSESP);
+	free(arraySSEDP);
+
+
+#ifdef WITHAVX
+	// Warm-Up run, AVX
+	TestMaxFlopsAVXSP(arrayAVXSP, 1.0000001f);
 
 	for (int i = 0; i < NRUNS; i++) {
 		double timeStart = GetWallTime();
@@ -593,8 +668,7 @@ void RunMaxFlopsTests(double peak)
 		runTimes[i] = GetWallTime() - timeStart;
 	}
 	for (int j = 0; j < instrRun * VECWIDTHAVXSP; j++) arraySumSP += arrayAVXSP[j];
-	printf("Single Precision Peak GFLOPS: %.3lf\n", (double)instrRun*VECWIDTHAVXSP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9);
-
+	printf("Single Precision Peak GFLOPS (AVX): %.3lf\n", (double)instrRun*VECWIDTHAVXSP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9);
 
 	for (int i = 0; i < NRUNS; i++) {
 		double timeStart = GetWallTime();
@@ -602,12 +676,11 @@ void RunMaxFlopsTests(double peak)
 		runTimes[i] = GetWallTime() - timeStart;
 	}
 	for (int j = 0; j < instrRun * VECWIDTHAVXSP; j++) arraySumDP += arrayAVXDP[j];
-	printf("Double Precision Peak GFLOPS: %.3lf\n", (double)instrRun*VECWIDTHAVXDP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9);
+	printf("Double Precision Peak GFLOPS (AVX): %.3lf\n", (double)instrRun*VECWIDTHAVXDP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9);
 
-
-
-
-
+	free(arrayAVXSP);
+	free(arrayAVXDP);
+#endif
 }
 
 
@@ -617,6 +690,7 @@ void TestFreqs(double *freqs)
 {
 	printf("\n\nMeasuring loaded CPU frequencies...\n");
 
+#ifdef WITHAVX
 	// Check maximum number of threads
 	int maxThreads = omp_get_max_threads();
 
@@ -659,7 +733,7 @@ void TestFreqs(double *freqs)
 
 			// Start PAPI counters
 			int counters[1] = {PAPI_TOT_CYC};
-			int numCounters = 1;
+			const int numCounters = 1;
 			CheckPAPIError(PAPI_start_counters(counters, numCounters), __LINE__);
 
 			// Load CPU
@@ -694,6 +768,9 @@ void TestFreqs(double *freqs)
 		_mm_free(array);
 	}
 
+	free(totalCycles);
+	free(runTimes);
+#endif
 }
 
 

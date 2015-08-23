@@ -87,6 +87,7 @@ int TestThrMulSSEDP(double * RESTRICT array, CONST double scaleFac)
 	return 8;
 }
 // avx
+#ifdef WITHAVX
 int TestThrMulAVXSP(float * RESTRICT array, CONST float scaleFac)
 {
 	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
@@ -155,6 +156,7 @@ int TestThrMulAVXDP(double * RESTRICT array, CONST double scaleFac)
 
 	return 8;
 }
+#endif
 
 
 //// Multiplication
@@ -228,6 +230,7 @@ int TestThrAddSSEDP(double * RESTRICT array, CONST double scaleFac)
 	return 8;
 }
 // avx
+#ifdef WITHAVX
 int TestThrAddAVXSP(float * RESTRICT array, CONST float scaleFac)
 {
 	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
@@ -296,6 +299,7 @@ int TestThrAddAVXDP(double * RESTRICT array, CONST double scaleFac)
 
 	return 8;
 }
+#endif
 
 
 //// Division
@@ -381,6 +385,7 @@ int TestThrDivSSEDP(double * RESTRICT array, CONST double scaleFac)
 	return 8;
 }
 // avx
+#ifdef WITHAVX
 int TestThrDivAVXSP(float * RESTRICT array, CONST float scaleFac)
 {
 	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
@@ -449,3 +454,4 @@ int TestThrDivAVXDP(double * RESTRICT array, CONST double scaleFac)
 
 	return 8;
 }
+#endif

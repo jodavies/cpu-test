@@ -38,6 +38,7 @@ int TestLatAddSSEDP(double * RESTRICT array, CONST double scaleFac)
 	return 1;
 }
 // avx
+#ifdef WITHAVX
 int TestLatAddAVXSP(float * RESTRICT array, CONST float scaleFac)
 {
 	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
@@ -58,7 +59,7 @@ int TestLatAddAVXDP(double * RESTRICT array, CONST double scaleFac)
 	_mm256_store_pd(array, v_array);
 	return 1;
 }
-
+#endif
 
 //// Multiplication
 // sse
@@ -83,6 +84,7 @@ int TestLatMulSSEDP(double * RESTRICT array, CONST double scaleFac)
 	return 1;
 }
 // avx
+#ifdef WITHAVX
 int TestLatMulAVXSP(float * RESTRICT array, CONST float scaleFac)
 {
 	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
@@ -103,6 +105,7 @@ int TestLatMulAVXDP(double * RESTRICT array, CONST double scaleFac)
 	_mm256_store_pd(array, v_array);
 	return 1;
 }
+#endif
 
 
 //// Division
@@ -128,6 +131,7 @@ int TestLatDivSSEDP(double * RESTRICT array, CONST double scaleFac)
 	return 1;
 }
 // avx
+#ifdef WITHAVX
 int TestLatDivAVXSP(float * RESTRICT array, CONST float scaleFac)
 {
 	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
@@ -148,3 +152,4 @@ int TestLatDivAVXDP(double * RESTRICT array, CONST double scaleFac)
 	_mm256_store_pd(array, v_array);
 	return 1;
 }
+#endif
