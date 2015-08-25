@@ -8,8 +8,20 @@
 
 // Comment out to remove all AVX functions and instructions, for compiling on non-supporting CPUs
 #define WITHAVX 1
-// Comment out to remove all FMA instructions. Don't use FMA without AVX also.
-//#define WITHFMA 1
+
+
+// All FMA CPUs also support AVX, and we test with AVX-width vectors...
+#ifdef WITHAVX
+// Comment out to remove all FMA instructions. Set intrinsic here,
+// since it differs for Intel's FMA3 and AMD's FMA4
+#define WITHFMA 1
+// FMA3 (intel haswell+)
+#define FMAINTRINAVXSP _mm256_fmadd_ps
+#define FMAINTRINAVXDP _mm256_fmadd_pd
+// FMA4 (amd piledriver+)
+//#define FMAINTRINAVXSP _mm256_macc_ps
+//#define FMAINTRINAVXDP _mm256_macc_pd
+#endif
 
 
 // Define a single-core operating frequency in GHz, for a report % of max flops achieved

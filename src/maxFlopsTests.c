@@ -1,4 +1,5 @@
 #include <immintrin.h>
+#include <x86intrin.h>
 #include "maxFlopsTests.h"
 
 // Here we try to achieve the theoretical maximum floating point
@@ -9,7 +10,8 @@
 // For sandy-bridge, ivy-bridge this is achieved by submitting an add
 // and a mul each cycle.
 // For FMA supporting CPUs, (Intel Haswell+, AMD Bulldozer+), this is
-// achieved by submitting one or two FMAs per cycle.
+// achieved by submitting one or two FMAs per cycle. Correct FMA
+// instruction for the architecture set in runParameters.h
 
 
 // sandy bridge, ivy bridge
