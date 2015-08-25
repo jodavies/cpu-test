@@ -15,6 +15,7 @@ int TestLatMulSSEDP(double * RESTRICT array, CONST double scaleFac);
 #ifdef WITHAVX
 int TestLatMulAVXSP(float * RESTRICT array, CONST float scaleFac);
 int TestLatMulAVXDP(double * RESTRICT array, CONST double scaleFac);
+
 #endif
 
 // Division
@@ -23,4 +24,10 @@ int TestLatDivSSEDP(double * RESTRICT array, CONST double scaleFac);
 #ifdef WITHAVX
 int TestLatDivAVXSP(float * RESTRICT array, CONST float scaleFac);
 int TestLatDivAVXDP(double * RESTRICT array, CONST double scaleFac);
+#endif
+
+// FMA
+#ifdef WITHFMA
+int TestLatFMAAVXSP(float * RESTRICT array, CONST float scaleFac);
+int TestLatFMAAVXDP(double * RESTRICT array, CONST double scaleFac);
 #endif

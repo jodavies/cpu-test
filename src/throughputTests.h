@@ -24,3 +24,9 @@ int TestThrDivSSEDP(double * RESTRICT array, CONST double scaleFac);
 int TestThrDivAVXSP(float * RESTRICT array, CONST float scaleFac);
 int TestThrDivAVXDP(double * RESTRICT array, CONST double scaleFac);
 #endif
+
+// FMA
+#ifdef WITHFMA
+int TestThrFMAAVXSP(float * RESTRICT array, CONST float scaleFac);
+int TestThrFMAAVXDP(double * RESTRICT array, CONST double scaleFac);
+#endif

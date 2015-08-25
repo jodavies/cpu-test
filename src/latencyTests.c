@@ -1,4 +1,5 @@
 #include <immintrin.h>
+#include <x86intrin.h>
 #include "latencyTests.h"
 
 // Here we have the function definitions for the latency tests.
@@ -148,6 +149,31 @@ int TestLatDivAVXDP(double * RESTRICT array, CONST double scaleFac)
 	__m256d v_array = _mm256_load_pd(array);
 	for (int i = 0; i < NTIMES; i++) {
 		v_array = _mm256_div_pd(v_array, v_scaleFac);
+	}
+	_mm256_store_pd(array, v_array);
+	return 1;
+}
+#endif
+
+
+//// FMA
+#ifdef WITHFMA
+int TestLatFMAAVXSP(float * RESTRICT array, CONST float scaleFac)
+{
+	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
+	__m256 v_array = _mm256_load_ps(array);
+	for (int i = 0; i < NTIMES; i++) {
+		v_array = FMAINTRINAVXSP(v_array, v_scaleFac, v_array);
+	}
+	_mm256_store_ps(array, v_array);
+	return 1;
+}
+int TestLatFMAAVXDP(double * RESTRICT array, CONST double scaleFac)
+{
+	__m256d v_scaleFac = _mm256_set1_pd(scaleFac);
+	__m256d v_array = _mm256_load_pd(array);
+	for (int i = 0; i < NTIMES; i++) {
+		v_array = FMAINTRINAVXDP(v_array, v_scaleFac, v_array);
 	}
 	_mm256_store_pd(array, v_array);
 	return 1;

@@ -18,7 +18,7 @@
 // FMA3 (intel haswell+)
 #define FMAINTRINAVXSP _mm256_fmadd_ps
 #define FMAINTRINAVXDP _mm256_fmadd_pd
-// FMA4 (amd piledriver+)
+// FMA4 (amd bulldozer+)
 //#define FMAINTRINAVXSP _mm256_macc_ps
 //#define FMAINTRINAVXDP _mm256_macc_pd
 #endif

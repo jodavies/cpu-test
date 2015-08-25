@@ -1,3 +1,8 @@
+# Compile time options: -- set march flag for gcc appropriately.
+#                       -- if using AMD FMA4 instructions, icc won't compile.
+#                       -- for haswell, use core-avx2
+
+
 all:
 	mkdir -p bin
 	gcc src/*.c -o bin/cpu-test -std=gnu99 -g -Wall -pedantic -lrt -lm -lpapi -fopenmp -O3 -march=core-avx-i

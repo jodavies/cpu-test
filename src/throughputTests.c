@@ -1,4 +1,5 @@
 #include <immintrin.h>
+#include <x86intrin.h>
 #include "throughputTests.h"
 
 // Here we have the function definitions for the throughput tests
@@ -453,5 +454,90 @@ int TestThrDivAVXDP(double * RESTRICT array, CONST double scaleFac)
 	_mm256_store_pd(&(array[28]), v_array7);
 
 	return 8;
+}
+#endif
+
+
+// FMA
+#ifdef WITHFMA
+int TestThrFMAAVXSP(float * RESTRICT array, CONST float scaleFac)
+{
+	__m256 v_scaleFac = _mm256_set1_ps(scaleFac);
+	__m256 v_array0 = _mm256_load_ps(&(array[0]));
+	__m256 v_array1 = _mm256_load_ps(&(array[8]));
+	__m256 v_array2 = _mm256_load_ps(&(array[16]));
+	__m256 v_array3 = _mm256_load_ps(&(array[24]));
+	__m256 v_array4 = _mm256_load_ps(&(array[32]));
+	__m256 v_array5 = _mm256_load_ps(&(array[40]));
+	__m256 v_array6 = _mm256_load_ps(&(array[48]));
+	__m256 v_array7 = _mm256_load_ps(&(array[56]));
+	__m256 v_array8 = _mm256_load_ps(&(array[64]));
+	__m256 v_array9 = _mm256_load_ps(&(array[72]));
+
+	for (int i = 0; i < NTIMES*100; i++) {
+		v_array0 = FMAINTRINAVXSP(v_array0, v_scaleFac, v_array0);
+		v_array1 = FMAINTRINAVXSP(v_array1, v_scaleFac, v_array1);
+		v_array2 = FMAINTRINAVXSP(v_array2, v_scaleFac, v_array2);
+		v_array3 = FMAINTRINAVXSP(v_array3, v_scaleFac, v_array3);
+		v_array4 = FMAINTRINAVXSP(v_array4, v_scaleFac, v_array4);
+		v_array5 = FMAINTRINAVXSP(v_array5, v_scaleFac, v_array5);
+		v_array6 = FMAINTRINAVXSP(v_array6, v_scaleFac, v_array6);
+		v_array7 = FMAINTRINAVXSP(v_array7, v_scaleFac, v_array7);
+		v_array8 = FMAINTRINAVXSP(v_array8, v_scaleFac, v_array8);
+		v_array9 = FMAINTRINAVXSP(v_array9, v_scaleFac, v_array9);
+	}
+
+	_mm256_store_ps(&(array[0]), v_array0);
+	_mm256_store_ps(&(array[8]), v_array1);
+	_mm256_store_ps(&(array[16]), v_array2);
+	_mm256_store_ps(&(array[24]), v_array3);
+	_mm256_store_ps(&(array[32]), v_array4);
+	_mm256_store_ps(&(array[40]), v_array5);
+	_mm256_store_ps(&(array[48]), v_array6);
+	_mm256_store_ps(&(array[56]), v_array7);
+	_mm256_store_ps(&(array[64]), v_array8);
+	_mm256_store_ps(&(array[72]), v_array9);
+
+	return 10;
+}
+int TestThrFMAAVXDP(double * RESTRICT array, CONST double scaleFac)
+{
+	__m256d v_scaleFac = _mm256_set1_pd(scaleFac);
+	__m256d v_array0 = _mm256_load_pd(&(array[0]));
+	__m256d v_array1 = _mm256_load_pd(&(array[4]));
+	__m256d v_array2 = _mm256_load_pd(&(array[8]));
+	__m256d v_array3 = _mm256_load_pd(&(array[12]));
+	__m256d v_array4 = _mm256_load_pd(&(array[16]));
+	__m256d v_array5 = _mm256_load_pd(&(array[20]));
+	__m256d v_array6 = _mm256_load_pd(&(array[24]));
+	__m256d v_array7 = _mm256_load_pd(&(array[28]));
+	__m256d v_array8 = _mm256_load_pd(&(array[32]));
+	__m256d v_array9 = _mm256_load_pd(&(array[36]));
+
+	for (int i = 0; i < NTIMES*100; i++) {
+		v_array0 = FMAINTRINAVXDP(v_array0, v_scaleFac, v_array0);
+		v_array1 = FMAINTRINAVXDP(v_array1, v_scaleFac, v_array1);
+		v_array2 = FMAINTRINAVXDP(v_array2, v_scaleFac, v_array2);
+		v_array3 = FMAINTRINAVXDP(v_array3, v_scaleFac, v_array3);
+		v_array4 = FMAINTRINAVXDP(v_array4, v_scaleFac, v_array4);
+		v_array5 = FMAINTRINAVXDP(v_array5, v_scaleFac, v_array5);
+		v_array6 = FMAINTRINAVXDP(v_array6, v_scaleFac, v_array6);
+		v_array7 = FMAINTRINAVXDP(v_array7, v_scaleFac, v_array7);
+		v_array8 = FMAINTRINAVXDP(v_array8, v_scaleFac, v_array8);
+		v_array9 = FMAINTRINAVXDP(v_array9, v_scaleFac, v_array9);
+	}
+
+	_mm256_store_pd(&(array[0]), v_array0);
+	_mm256_store_pd(&(array[4]), v_array1);
+	_mm256_store_pd(&(array[8]), v_array2);
+	_mm256_store_pd(&(array[12]), v_array3);
+	_mm256_store_pd(&(array[16]), v_array4);
+	_mm256_store_pd(&(array[20]), v_array5);
+	_mm256_store_pd(&(array[24]), v_array6);
+	_mm256_store_pd(&(array[28]), v_array7);
+	_mm256_store_pd(&(array[32]), v_array8);
+	_mm256_store_pd(&(array[36]), v_array9);
+
+	return 10;
 }
 #endif
