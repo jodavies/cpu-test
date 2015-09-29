@@ -57,12 +57,12 @@ int main(void)
 {
 	double * freqs;
 	freqs = malloc(omp_get_max_threads() * sizeof *freqs);
-	TestFreqs(freqs);
+//	TestFreqs(freqs);
 
-	RunMaxFlopsTests(1.0);
+//	RunMaxFlopsTests(1.0);
 
-	TestCacheAssociativity();
-	TestMemoryBandwidth();
+//	TestCacheAssociativity();
+//	TestMemoryBandwidth();
 
 	RunLatencyTestsParallel();
 	RunThroughputTestsParallel();
@@ -85,7 +85,10 @@ void RunLatencyTestsParallel()
 	// array: [threads-1][instruction][sub-instruction][thread id*NRUNS+run id]
 	long long resultsCycles[MAXTHREADS][4][4][MAXTHREADS*NRUNS];
 	// To index result array
-	const int add = 0; const int mul = 1; const int div = 2; const int fma = 3;
+	const int add = 0; const int mul = 1; const int div = 2;
+#ifdef WITHFMA
+	const int fma = 3;
+#endif
 	const int ps = 0; const int pd = 1; const int vps = 2; const int vpd = 3;
 
 	for (int threads = MINTHREADS; threads <= nThreads; threads THREADINCREMENT) {
@@ -342,6 +345,7 @@ void RunLatencyTestsParallel()
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vdivpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
 #endif
 #ifdef WITHFMA
+		printf("-----------------------------------------------------------------\n");
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vfmaddps", threads, tid, ComputeMean(&(resultsCycles[threads-1][fma][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vfmaddpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][fma][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
 #endif
@@ -369,6 +373,7 @@ void RunLatencyTestsParallel()
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vdivpd", threads, ComputeMean(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES);
 #endif
 #ifdef WITHFMA
+		printf("-----------------------------------------------------------------\n");
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vfmaddps", threads, ComputeMean(&(resultsCycles[threads-1][fma][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vfmaddpd", threads, ComputeMean(&(resultsCycles[threads-1][fma][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vpd][0]), threads*NRUNS)/(double)NTIMES);
 #endif
@@ -393,7 +398,10 @@ void RunThroughputTestsParallel()
 	// array: [threads-1][instruction][sub-instruction][thread id*NRUNS+run id]
 	long long resultsCycles[MAXTHREADS][4][4][MAXTHREADS*NRUNS];
 	// To index result array
-	const int add = 0; const int mul = 1; const int div = 2; const int fma = 3;
+	const int add = 0; const int mul = 1; const int div = 2;
+#ifdef WITHFMA
+	const int fma = 3;
+#endif
 	const int ps = 0; const int pd = 1; const int vps = 2; const int vpd = 3;
 
 	for (int threads = MINTHREADS; threads <= nThreads; threads THREADINCREMENT) {
@@ -654,6 +662,7 @@ void RunThroughputTestsParallel()
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vdivpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
 #endif
 #ifdef WITHFMA
+		printf("-----------------------------------------------------------------\n");
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vfmaddps", threads, tid, ComputeMean(&(resultsCycles[threads-1][fma][vps][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vps][tid*NRUNS]), NRUNS)/(double)NTIMES);
 		for (int tid = 0; tid < threads; tid++) printf("| %11s | %11d | %9d | %9.3lf | %9.3lf |\n", "vfmaddpd", threads, tid, ComputeMean(&(resultsCycles[threads-1][fma][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vpd][tid*NRUNS]), NRUNS)/(double)NTIMES);
 #endif
@@ -680,6 +689,7 @@ void RunThroughputTestsParallel()
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vdivpd", threads, ComputeMean(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][div][vpd][0]), threads*NRUNS)/(double)NTIMES);
 #endif
 #ifdef WITHFMA
+		printf("-----------------------------------------------------------------\n");
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vfmaddps", threads, ComputeMean(&(resultsCycles[threads-1][fma][vps][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vps][0]), threads*NRUNS)/(double)NTIMES);
 		printf("| %11s | %11d |  combined | %9.3lf | %9.3lf |\n", "vfmaddpd", threads, ComputeMean(&(resultsCycles[threads-1][fma][vpd][0]), threads*NRUNS)/(double)NTIMES, ComputeStdev(&(resultsCycles[threads-1][fma][vpd][0]), threads*NRUNS)/(double)NTIMES);
 #endif
@@ -694,11 +704,9 @@ void RunThroughputTestsParallel()
 
 // Try to achieve theoretical max flops of the architecture. For pre-FMA chips that we are interested in,
 // this is done with a mul and add instruction every cycle.
-// TODO: implement FMA test also.
 void RunMaxFlopsTests(double peak)
 {
 	printf("\n\nRunning Peak FLOPS tests (single thread) ...\n");
-	printf("!! These tests do not currently achieve peak FLOPS on CPUs which support FMA !!\n");
 
 	double acheivedGFLOPS;
 
@@ -791,17 +799,17 @@ void RunMaxFlopsTests(double peak)
 	for (int j = 0; j < instrRun * VECWIDTHAVXSP; j++) arraySumSP += arrayAVXSP[j];
 	acheivedGFLOPS = (double)instrRun*VECWIDTHAVXSP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9;
 	printf("Single Precision Peak GFLOPS (FMA         ): %.3lf (%2.1lf%%)\n",
-	       acheivedGFLOPS, acheivedGFLOPS/(CPUFREQ*2.0*VECWIDTHAVXSP)*100.0);
+	       acheivedGFLOPS, acheivedGFLOPS/(CPUFREQ*4.0*VECWIDTHAVXSP)*100.0);
 
 	for (int i = 0; i < NRUNS; i++) {
 		double timeStart = GetWallTime();
 		instrRun = TestMaxFlopsFMADP(arrayAVXDP, 1.0000001f);
 		runTimes[i] = GetWallTime() - timeStart;
 	}
-	for (int j = 0; j < instrRun * VECWIDTHAVXSP; j++) arraySumDP += arrayAVXDP[j];
+	for (int j = 0; j < instrRun * VECWIDTHAVXDP; j++) arraySumDP += arrayAVXDP[j];
 	acheivedGFLOPS = (double)instrRun*VECWIDTHAVXDP*NTIMES*100.0/ComputeMeanDouble(runTimes, NRUNS)/1.0e9;
 	printf("Double Precision Peak GFLOPS (FMA         ): %.3lf (%2.1lf%%)\n",
-	       acheivedGFLOPS, acheivedGFLOPS/(CPUFREQ*2.0*VECWIDTHAVXDP)*100.0);
+	       acheivedGFLOPS, acheivedGFLOPS/(CPUFREQ*4.0*VECWIDTHAVXDP)*100.0);
 #endif
 
 	free(arrayAVXSP);
@@ -828,7 +836,7 @@ void TestFreqs(double *freqs)
 	double *runTimes;
 	runTimes = malloc(maxThreads * sizeof *runTimes);
 
-	// For each possible thread count:
+	// For each possible thread count. SSE load.
 	for (int threads = MINTHREADS; threads <= maxThreads; threads THREADINCREMENT) {
 
 		// allocate an array for PAPI counter results
@@ -874,6 +882,16 @@ void TestFreqs(double *freqs)
 			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
 			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
 			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
 
 			// Stop PAPI counters
 			CheckPAPIError(PAPI_stop_counters(&(cycles[omp_get_thread_num()]), numCounters), __LINE__);
@@ -887,7 +905,84 @@ void TestFreqs(double *freqs)
 			totalCycles[threads-1] += cycles[i]/(double)threads;
 		}
 
-		printf("Threads: %d, freq: %.2lf GHz (%.0lf cyc, %.3lf s)\n", threads, totalCycles[threads-1]/time/1.0e9, totalCycles[threads-1], time);
+		printf("SSE load. Threads: %d, freq: %.2lf GHz (%.0lf cyc, %.3lf s)\n", threads, totalCycles[threads-1]/time/1.0e9, totalCycles[threads-1], time);
+		freqs[threads-1] = totalCycles[threads-1]/time/1.0e9;
+	
+		// Free allocated memory
+		free(cycles);
+		_mm_free(array);
+	}
+	printf("\n");
+	// For each possible thread count. AVX load -- some CPUs run slower with AVX than SSE.
+	for (int threads = MINTHREADS; threads <= maxThreads; threads THREADINCREMENT) {
+
+		// allocate an array for PAPI counter results
+		long long *cycles;
+		cycles = malloc(threads * sizeof *cycles);
+
+		// allocate an array to use to provide load
+		double *array;
+		array = _mm_malloc(32 * threads * sizeof *array, 32);
+
+
+		// Start openmp team. Disable dynamic threads so we are sure of the number.
+		omp_set_dynamic(0);
+		omp_set_num_threads(threads);
+
+		// warm-up CPU
+		#pragma omp parallel default(none) shared(array)
+		{
+			int tid = omp_get_thread_num();
+			TestMaxFlopsSSEDP(&(array[tid*32]), 3.0);
+		}
+
+		// Start timing
+		double time = GetWallTime();
+
+		#pragma omp parallel default(none) shared(array, cycles, threads)
+		{
+			int tid = omp_get_thread_num();
+
+			// Start PAPI counters
+			int counters[1] = {PAPI_TOT_CYC};
+			const int numCounters = 1;
+			CheckPAPIError(PAPI_start_counters(counters, numCounters), __LINE__);
+
+			// Load CPU
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+			TestMaxFlopsAVXDP(&(array[tid*32]), 3.0);
+
+			// Stop PAPI counters
+			CheckPAPIError(PAPI_stop_counters(&(cycles[omp_get_thread_num()]), numCounters), __LINE__);
+		}
+
+		// Stop timer
+		time = GetWallTime() - time;
+
+		totalCycles[threads-1] = 0;
+		for (int i = 0; i < threads; i++) {
+			totalCycles[threads-1] += cycles[i]/(double)threads;
+		}
+
+		printf("AVX load. Threads: %d, freq: %.2lf GHz (%.0lf cyc, %.3lf s)\n", threads, totalCycles[threads-1]/time/1.0e9, totalCycles[threads-1], time);
 		freqs[threads-1] = totalCycles[threads-1]/time/1.0e9;
 	
 		// Free allocated memory
@@ -1021,8 +1116,6 @@ void TestCacheAssociativity()
 	// with varying stride, ie, read every cache line, every other, every third, etc.
 	const int cacheLineSize = 8;
 
-	// Warm up
-	
 
 	for (int stride = 1; stride <= maxStride; stride++) {
 

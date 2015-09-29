@@ -14,7 +14,7 @@
 #ifdef WITHAVX
 // Comment out to remove all FMA instructions. Set intrinsic here,
 // since it differs for Intel's FMA3 and AMD's FMA4
-#define WITHFMA 1
+//#define WITHFMA 1
 // FMA3 (intel haswell+)
 #define FMAINTRINAVXSP _mm256_fmadd_ps
 #define FMAINTRINAVXDP _mm256_fmadd_pd
